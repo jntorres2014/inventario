@@ -34,7 +34,13 @@
   const saveRecord = (record) => transaction("readwrite", (store) => store.add(record));
   const clearRecords = () => transaction("readwrite", (store) => store.clear());
 
-  function cleanCode(value) { return String(value || "").trim(); }
+  function cleanCode(value) {
+    return String(value || "")
+      .trim()
+      .replace(/[‐‑‒–—−]/g, "-")
+      .replace(/\s*-\s*/g, "-")
+      .toUpperCase();
+  }
   function setResult(type, text) { $("#result").className = `result ${type}`; $("#result").textContent = text; }
   function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]); }
 
@@ -148,4 +154,3 @@
   $("#installButton").addEventListener("click", async () => { if (!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice; installPrompt = undefined; $("#installButton").classList.add("hidden"); });
   initialize().catch((error) => setResult("error", `No se pudo iniciar: ${error.message}`));
 })();
-
