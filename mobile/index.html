@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b66">
+  <meta name="description" content="Escáner offline para jornadas de inventario">
+  <link rel="manifest" href="/mobile/manifest.webmanifest">
+  <link rel="icon" href="/mobile/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/mobile/styles.css">
+  <title>Escáner de inventario</title>
+</head>
+<body>
+  <header>
+    <div>
+      <span class="eyebrow">MODO CELULAR · SIN CONEXIÓN</span>
+      <h1>Escáner de inventario</h1>
+    </div>
+    <span id="offlineBadge" class="badge">Listo offline</span>
+  </header>
+
+  <main>
+    <section class="panel session-panel">
+      <h2>Datos de la jornada</h2>
+      <div class="fields">
+        <label>Operador<input id="operator" type="text" maxlength="100" placeholder="Ej.: Jony"></label>
+        <label>Sector<input id="sector" type="text" maxlength="100" placeholder="Ej.: Sistemas"></label>
+      </div>
+      <button id="installButton" class="secondary hidden" type="button">Instalar aplicación</button>
+    </section>
+
+    <section class="stats">
+      <article><span>Únicos</span><strong id="uniqueCount">0</strong></article>
+      <article><span>Lecturas</span><strong id="scanCount">0</strong></article>
+      <article class="warning"><span>Repetidos</span><strong id="repeatCount">0</strong></article>
+    </section>
+
+    <section class="panel scanner-panel">
+      <div id="cameraArea" class="camera hidden">
+        <video id="camera" playsinline muted></video>
+        <div class="target"></div>
+      </div>
+      <div class="camera-actions">
+        <button id="startCamera" type="button">Abrir cámara</button>
+        <button id="stopCamera" class="secondary hidden" type="button">Cerrar cámara</button>
+      </div>
+
+      <div class="separator"><span>Ingreso manual</span></div>
+      <form id="manualForm">
+        <input id="manualCode" type="text" inputmode="numeric" autocomplete="off" placeholder="Número de inventario" required>
+        <button type="submit">Agregar</button>
+      </form>
+      <div id="result" class="result neutral">Todavía no hay lecturas.</div>
+    </section>
+
+    <section class="panel records-panel">
+      <div class="heading">
+        <h2>Últimas lecturas</h2>
+        <button id="clearButton" class="danger-button" type="button">Vaciar</button>
+      </div>
+      <ol id="records"></ol>
+    </section>
+
+    <section class="export-panel">
+      <button id="exportButton" class="export-button" type="button">Descargar Excel</button>
+      <p>El archivo se guardará en Descargas. Después podés pasarlo por USB a Ubuntu.</p>
+    </section>
+  </main>
+
+  <script src="/mobile/xlsx-exporter.js"></script>
+  <script src="/mobile/app.js"></script>
+</body>
+</html>
+

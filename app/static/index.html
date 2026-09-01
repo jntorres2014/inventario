@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b66">
+  <title>Comparador de inventario</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <span class="eyebrow">UBUNTU · PROCESAMIENTO LOCAL</span>
+      <h1>Comparador de inventario</h1>
+    </div>
+    <span id="connectionStatus" class="badge">Conectando…</span>
+  </header>
+
+  <main>
+    <section class="workflow-grid">
+      <article class="panel step-panel">
+        <span class="step-number">1</span>
+        <h2>Cargar inventario maestro</h2>
+        <p>Seleccioná el Excel local que contiene todos los activos.</p>
+        <form id="uploadForm" class="vertical-form">
+          <input id="inventoryFile" name="file" type="file" accept=".xlsx" required>
+          <input id="inventoryColumn" name="inventory_column" type="text" placeholder="Columna opcional: Cód. bien">
+          <button type="submit">Cargar inventario</button>
+        </form>
+        <button id="demoButton" class="secondary full" type="button">Usar inventario de demostración</button>
+      </article>
+
+      <article class="panel step-panel">
+        <span class="step-number">2</span>
+        <h2>Cargar escaneos del celular</h2>
+        <p>Podés seleccionar uno o varios Excel generados por los teléfonos.</p>
+        <form id="scanFilesForm" class="vertical-form">
+          <input id="scanFiles" name="files" type="file" accept=".xlsx" multiple required>
+          <input id="scanCodeColumn" name="code_column" type="text" placeholder="Columna opcional: Cód. bien">
+          <button type="submit">Comparar archivos</button>
+        </form>
+        <a class="mobile-link" href="/mobile/">Abrir instalador del escáner móvil</a>
+      </article>
+    </section>
+
+    <div id="result" class="result neutral">Esperando archivos…</div>
+
+    <section class="stats" aria-label="Resumen del inventario">
+      <article><span>Total</span><strong id="total">0</strong></article>
+      <article class="success"><span>Encontrados</span><strong id="found">0</strong></article>
+      <article class="danger"><span>Pendientes</span><strong id="pending">0</strong></article>
+      <article class="warning"><span>Repetidos</span><strong id="duplicates">0</strong></article>
+      <article class="unknown"><span>Desconocidos</span><strong id="unknown">0</strong></article>
+    </section>
+
+    <section class="progress-panel panel">
+      <div class="progress-copy"><strong id="percent">0%</strong><span id="filename">Sin inventario cargado</span></div>
+      <div class="progress-track"><div id="progressBar"></div></div>
+    </section>
+
+    <section class="panel list-panel">
+      <div class="list-heading">
+        <h2>Resultado de la comparación</h2>
+        <button id="refreshButton" class="secondary small" type="button">Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Inventario</th><th>Estado</th><th>Operador</th><th>Lecturas</th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <a class="download-button" href="/api/export">Descargar Excel final</a>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Escáner de inventario",
+  "short_name": "Inventario",
+  "description": "Escáner offline que genera un Excel para comparar en Ubuntu",
+  "id": "/mobile/",
+  "start_url": "/mobile/",
+  "scope": "/mobile/",
+  "display": "standalone",
+  "background_color": "#f2f6fa",
+  "theme_color": "#123b66",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/mobile/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

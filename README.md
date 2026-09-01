@@ -1,48 +1,62 @@
 # Inventario local de activos
 
-Prototipo para inventariar equipos mediante códigos de barras, compararlos con un Excel y exportar el resultado. Está diseñado para ejecutarse en un servidor local y no utiliza servicios en la nube.
+Sistema dividido en dos partes independientes:
 
-## Funciones incluidas
+1. **Escáner móvil web (PWA):** funciona offline en Android, guarda las lecturas en el teléfono y descarga un Excel.
+2. **Comparador Ubuntu:** carga el inventario maestro y uno o varios Excel de escaneos para producir el resultado final.
 
-- Importación de archivos `.xlsx`.
-- Detección automática de columnas habituales de número de inventario.
-- Comparación exacta y conservación de ceros iniciales cuando el Excel usa formatos como `000000`.
-- Registro concurrente desde distintos dispositivos.
-- Estados: encontrado, pendiente, repetido y no registrado.
-- Identificación del operador y fecha de la primera lectura.
-- Panel de avance actualizado cada cinco segundos.
-- Exportación del Excel con encontrados en verde y pendientes en rojo.
-- Hoja adicional para códigos que no estaban registrados.
-- Datos de demostración incluidos desde la interfaz.
+El teléfono nunca recibe el inventario maestro y no necesita conectarse al servidor durante el recorrido.
 
-## Prueba rápida
+## Flujo de trabajo
+
+1. Instalar una vez la PWA desde el servidor Ubuntu mediante HTTPS local.
+2. Abrir la PWA, indicar operador y sector, y escanear sin conexión.
+3. Descargar `escaneo_<sector>_<fecha>.xlsx` en el teléfono.
+4. Pasar el archivo a Ubuntu, preferentemente por USB.
+5. En Ubuntu, cargar primero el Excel maestro y después los archivos generados por los celulares.
+6. Descargar el Excel final con encontrados en verde y pendientes en rojo.
+
+## Funciones del celular
+
+- Cámara para códigos de barras mediante la API segura del navegador.
+- Ingreso manual como alternativa.
+- Registro automático en IndexedDB para no perder lecturas al cerrar la aplicación.
+- Conteo de códigos únicos, lecturas totales y repetidos.
+- Operador, sector, fecha y hora.
+- Generación local de un archivo `.xlsx` válido, sin enviar información al servidor.
+- Instalación en pantalla de inicio y funcionamiento offline mediante Service Worker.
+- Sin APIs externas, CDN, Firebase ni servicios en la nube.
+
+## Funciones de Ubuntu
+
+- Importación del inventario maestro `.xlsx`.
+- Importación acumulativa de uno o varios Excel generados por teléfonos.
+- Estados: encontrado, pendiente, repetido y desconocido.
+- Panel de avance y trazabilidad del primer operador.
+- Exportación del Excel maestro coloreado.
+- Hoja adicional con códigos desconocidos.
+- Conservación de ceros iniciales cuando el Excel usa formatos como `000000`.
+
+## Prueba rápida en Ubuntu
 
 Requiere Python 3.11 o posterior.
 
-### Windows
-
-Ejecutar:
-
-```powershell
-start.bat
-```
-
-### Ubuntu/Linux
-
-Ejecutar:
-
 ```bash
+sudo apt update
+sudo apt install git python3 python3-venv openssl
+git clone -b codex/mvp-inventario-local https://github.com/jntorres2014/inventario.git
+cd inventario
 chmod +x start.sh
 ./start.sh
 ```
 
-Abrir en el equipo servidor:
+Abrir en Ubuntu:
 
 ```text
 http://localhost:8000
 ```
 
-Pulsar **Usar datos de demostración** y probar los códigos:
+Pulsar **Usar inventario de demostración**. Los códigos válidos son:
 
 ```text
 000101
@@ -50,37 +64,52 @@ Pulsar **Usar datos de demostración** y probar los códigos:
 000103
 ```
 
-## Acceso desde teléfonos
+Esta prueba HTTP permite validar el comparador. Para instalar la PWA y usar la cámara se necesita HTTPS.
 
-El servidor se inicia escuchando en todas sus interfaces. En una red local autorizada, se accede usando su IP, por ejemplo:
+## HTTPS local e instalación de la PWA
 
-```text
-http://192.168.50.10:8000
+Obtener la IP del servidor:
+
+```bash
+hostname -I
 ```
 
-El firewall debe permitir el puerto TCP 8000 únicamente desde la red de inventario.
+Iniciar con HTTPS indicando la IP, por ejemplo:
 
-> La cámara del navegador requiere un contexto HTTPS cuando la página se abre desde otro dispositivo. El ingreso manual funciona sobre HTTP y permite validar ahora la carga, comparación y exportación. La siguiente etapa incorporará HTTPS local y un lector compatible con Android/iPhone según el tipo real de código de barras.
+```bash
+chmod +x start-https.sh scripts/create-local-cert.sh
+./start-https.sh 192.168.50.10
+```
 
-## Seguridad y datos
+La primera vez se crean una autoridad certificadora privada y un certificado para esa IP dentro de `certs/`. Ese directorio está excluido de Git.
 
-- No subir archivos de inventario reales al repositorio.
-- Los Excel, la base SQLite y las exportaciones se guardan dentro de `data/`, excluida por `.gitignore`.
-- El repositorio no depende de Firebase, servicios de túnel ni APIs externas durante la ejecución.
-- Para producción debe utilizarse HTTPS, autenticación y reglas de firewall definidas por el área de Seguridad.
+En el Android de prueba:
 
-## Formato esperado del Excel
+1. Copiar `certs/inventory-ca.crt` al teléfono mediante un medio autorizado.
+2. Instalarlo como certificado de CA desde la configuración de seguridad de Android.
+3. Conectar temporalmente el teléfono a la misma red local que Ubuntu.
+4. Abrir `https://192.168.50.10:8443/mobile/` en Chrome.
+5. Verificar que no aparezca una advertencia de certificado.
+6. Seleccionar **Instalar aplicación** o usar el menú de Chrome.
+7. Abrir la aplicación instalada y probar la cámara.
+8. Desconectar el teléfono de la red: las lecturas y la exportación siguen funcionando offline.
 
-La primera fila debe contener los encabezados. Se reconocen automáticamente nombres como:
+> La instalación de una CA en teléfonos laborales debe ser autorizada por Seguridad. La clave `inventory-ca.key` debe permanecer protegida únicamente en Ubuntu.
 
-- `Inventario`
-- `Número Inventario`
-- `Nro Inventario`
-- `Código Inventario`
+## Archivos y seguridad
 
-También se puede escribir el nombre exacto de la columna en la pantalla de carga.
+- No subir Excel reales al repositorio.
+- `data/`, `certs/`, archivos Excel y la base SQLite están excluidos mediante `.gitignore`.
+- El archivo móvil solo contiene códigos escaneados y datos de la jornada; no contiene el inventario maestro ni descripciones de activos.
+- El comparador funciona en Ubuntu y no requiere hosting externo.
 
-## Estado del prototipo
+## Pruebas
 
-Esta versión valida el circuito principal. Para cerrar la compatibilidad de cámara necesitamos una fotografía de la etiqueta y saber qué valor devuelve el código de barras real.
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -q
+```
+
+El flujo automático cubre inventario demo, lectura encontrada, repetición, código desconocido, importación del Excel móvil, estadísticas y exportación final.
 
