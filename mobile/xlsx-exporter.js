@@ -85,7 +85,7 @@
   }
 
   window.exportInventoryXlsx = function exportInventoryXlsx(records) {
-    const headers = ["Numero Inventario", "Fecha y hora", "Operador", "Sector", "Repetido"];
+    const headers = ["Cód. bien", "Fecha y hora", "Operador", "Sector", "Repetido"];
     const rows = [headers, ...records.map((record) => [
       record.code, record.timestamp, record.operator, record.sector, record.repeated ? "SI" : "NO"
     ])];
