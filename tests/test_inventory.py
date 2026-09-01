@@ -15,10 +15,15 @@ def test_header_normalization_and_detection():
 
 def test_auto_detect_inventory_header():
     assert find_inventory_column(["Equipo", "Nro Inventario"], None) == 2
+    assert find_inventory_column(["Cód. bien", "Bien", "Tipo bien"], None) == 1
 
 
 def test_numeric_code_removes_excel_decimal():
     assert normalize_code("12345.0") == "12345"
+
+
+def test_asset_code_keeps_zeros_and_normalizes_case_and_dash():
+    assert normalize_code(" a030008 – 000000000248 ") == "A030008-000000000248"
 
 
 def test_cell_code_preserves_zero_number_format():
