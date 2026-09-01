@@ -7,6 +7,7 @@ import sqlite3
 import unicodedata
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ DB_PATH = DATA_DIR / "inventario.db"
 SOURCE_PATH = DATA_DIR / "inventario_origen.xlsx"
 EXPORT_PATH = DATA_DIR / "inventario_resultado.xlsx"
 STATIC_DIR = BASE_DIR / "app" / "static"
+MOBILE_DIR = BASE_DIR / "mobile"
 
 GREEN_FILL = PatternFill("solid", fgColor="C6EFCE")
 RED_FILL = PatternFill("solid", fgColor="FFC7CE")
@@ -79,6 +81,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Inventario local", version="0.1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/mobile", StaticFiles(directory=MOBILE_DIR, html=True), name="mobile")
 
 
 def normalize_header(value: Any) -> str:
@@ -131,6 +134,13 @@ def find_inventory_column(headers: list[Any], requested: str | None) -> int:
         if normalize_header(header) in candidates:
             return index
     raise ValueError("No se pudo detectar automáticamente la columna de inventario.")
+
+
+def find_optional_column(headers: list[Any], candidates: set[str]) -> int | None:
+    for index, header in enumerate(headers, start=1):
+        if normalize_header(header) in candidates:
+            return index
+    return None
 
 
 def store_metadata(connection: sqlite3.Connection, key: str, value: Any) -> None:
@@ -214,6 +224,111 @@ async def import_inventory(
         "total": len(items),
         "column": headers[column_index - 1],
         "duplicates_in_file": duplicates,
+    }
+
+
+@app.post("/api/scans/import")
+async def import_scan_files(
+    files: list[UploadFile] = File(...), code_column: str = Form(default="")
+) -> dict[str, Any]:
+    if not SOURCE_PATH.exists():
+        raise HTTPException(400, "Primero cargá el Excel maestro del inventario.")
+    if not files:
+        raise HTTPException(400, "Seleccioná al menos un archivo generado por el celular.")
+
+    imported_events = 0
+    found_events = 0
+    unknown_events = 0
+    repeated_events = 0
+    file_results: list[dict[str, Any]] = []
+
+    with connect() as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        for uploaded_file in files:
+            filename = uploaded_file.filename or "escaneo.xlsx"
+            if not filename.lower().endswith(".xlsx"):
+                raise HTTPException(400, f"'{filename}' no es un archivo .xlsx.")
+            content = await uploaded_file.read()
+            if len(content) > 25 * 1024 * 1024:
+                raise HTTPException(400, f"'{filename}' supera el máximo de 25 MB.")
+
+            try:
+                workbook = load_workbook(BytesIO(content), data_only=True, read_only=True)
+                worksheet = workbook.active
+                headers = [cell.value for cell in worksheet[1]]
+                code_index = find_inventory_column(headers, code_column or None)
+            except ValueError as exc:
+                raise HTTPException(
+                    400,
+                    {
+                        "message": f"{filename}: {exc}",
+                        "available_columns": [str(header) for header in headers if header],
+                    },
+                ) from exc
+            except Exception as exc:
+                raise HTTPException(400, f"No se pudo leer '{filename}'.") from exc
+
+            operator_index = find_optional_column(
+                headers, {"operador", "usuario", "escaneadopor", "responsable"}
+            )
+            date_index = find_optional_column(
+                headers, {"fecha", "fechahora", "fechayhora", "timestamp"}
+            )
+            current_file_events = 0
+
+            for row_number in range(2, worksheet.max_row + 1):
+                code = cell_code(worksheet.cell(row=row_number, column=code_index))
+                if not code:
+                    continue
+                operator = (
+                    normalize_code(worksheet.cell(row_number, operator_index).value)
+                    if operator_index
+                    else "Celular"
+                ) or "Celular"
+                raw_date = worksheet.cell(row_number, date_index).value if date_index else None
+                if isinstance(raw_date, datetime):
+                    scanned_at = raw_date.astimezone().isoformat(timespec="seconds")
+                else:
+                    scanned_at = normalize_code(raw_date) or now_iso()
+
+                imported_events += 1
+                current_file_events += 1
+                item = connection.execute(
+                    "SELECT found, scan_count FROM items WHERE code = ?", (code,)
+                ).fetchone()
+                if item is None:
+                    unknown_events += 1
+                    connection.execute(
+                        "INSERT INTO unknown_scans(code, scanned_at, scanner_name) VALUES(?, ?, ?)",
+                        (code, scanned_at, operator),
+                    )
+                    continue
+
+                if item["found"]:
+                    repeated_events += 1
+                else:
+                    found_events += 1
+                connection.execute(
+                    """
+                    UPDATE items
+                    SET found = 1,
+                        first_scanned_at = COALESCE(first_scanned_at, ?),
+                        scanner_name = COALESCE(scanner_name, ?),
+                        scan_count = scan_count + 1
+                    WHERE code = ?
+                    """,
+                    (scanned_at, operator, code),
+                )
+
+            file_results.append({"filename": filename, "events": current_file_events})
+
+    return {
+        "ok": True,
+        "imported_events": imported_events,
+        "found_events": found_events,
+        "unknown_events": unknown_events,
+        "repeated_events": repeated_events,
+        "files": file_results,
     }
 
 
