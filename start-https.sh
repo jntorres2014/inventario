@@ -7,8 +7,9 @@ cd "${PROJECT_DIR}"
 
 if [[ ! -d .venv ]]; then
   python3 -m venv .venv
-  .venv/bin/python -m pip install -r requirements.txt
 fi
+
+.venv/bin/python -m pip install -r requirements.txt
 
 if [[ ! -f certs/server.crt || ! -f certs/server.key ]]; then
   chmod +x scripts/create-local-cert.sh
@@ -22,4 +23,3 @@ echo "Instalador móvil:  https://${SERVER_IP}:8443/mobile/"
   --port 8443 \
   --ssl-keyfile certs/server.key \
   --ssl-certfile certs/server.crt
-
