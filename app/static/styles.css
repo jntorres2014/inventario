@@ -62,13 +62,21 @@ main { max-width: 1180px; margin: 0 auto; padding: 1rem; }
 .panel p { color: var(--muted); margin: 0; }
 .admin-panel { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.5fr) auto; align-items: center; gap: 1rem; }
 .upload-form { display: grid; grid-template-columns: 1.2fr 1fr auto; gap: .6rem; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: .8rem; margin: 1rem 0; }
 .stats article { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 1rem; }
 .stats span { display: block; color: var(--muted); font-size: .82rem; }
 .stats strong { display: block; font-size: 1.8rem; margin-top: .2rem; }
 .stats .success strong { color: var(--green); }
 .stats .danger strong { color: var(--red); }
 .stats .warning strong { color: var(--amber); }
+.stats .unknown strong { color: #53657a; }
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.step-panel { position: relative; padding-top: 1.3rem; }
+.step-number { align-items: center; background: var(--navy); border-radius: 999px; color: white; display: inline-flex; font-size: .78rem; font-weight: 800; height: 1.7rem; justify-content: center; margin-bottom: .7rem; width: 1.7rem; }
+.vertical-form { display: grid; gap: .65rem; margin-top: 1rem; }
+.full { margin-top: .65rem; width: 100%; }
+.mobile-link { border: 1px solid var(--line); border-radius: 10px; color: var(--navy); display: block; font-weight: 700; margin-top: .65rem; padding: .75rem; text-align: center; text-decoration: none; }
+.mobile-link:hover { background: #eef4fa; }
 .progress-panel { margin-bottom: 1rem; }
 .progress-copy { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .65rem; }
 .progress-copy span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -99,8 +107,9 @@ th { color: var(--muted); font-size: .75rem; text-transform: uppercase; }
 .hidden { display: none !important; }
 
 @media (max-width: 850px) {
-  .admin-panel, .scanner-grid { grid-template-columns: 1fr; }
+  .admin-panel, .scanner-grid, .workflow-grid { grid-template-columns: 1fr; }
   .upload-form { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 560px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -108,4 +117,3 @@ th { color: var(--muted); font-size: .75rem; text-transform: uppercase; }
   .badge { font-size: 0; }
   .badge::after { content: "●"; font-size: 1rem; }
 }
-
