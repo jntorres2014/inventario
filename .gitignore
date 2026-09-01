@@ -4,9 +4,9 @@ __pycache__/
 .venv/
 venv/
 .env
+certs/
 data/*
 !data/.gitkeep
 *.xlsx
 *.xls
 !examples/*.xlsx
-
