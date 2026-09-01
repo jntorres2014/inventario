@@ -90,11 +90,18 @@ def normalize_header(value: Any) -> str:
     return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
-def normalize_code(value: Any) -> str:
+def normalize_text(value: Any) -> str:
     text = str(value or "").strip()
+    return text
+
+
+def normalize_code(value: Any) -> str:
+    text = normalize_text(value)
     if re.fullmatch(r"\d+\.0", text):
         text = text[:-2]
-    return text
+    text = re.sub(r"[‐‑‒–—−]", "-", text)
+    text = re.sub(r"\s*-\s*", "-", text)
+    return text.upper()
 
 
 def cell_code(cell: Cell) -> str:
@@ -129,6 +136,9 @@ def find_inventory_column(headers: list[Any], requested: str | None) -> int:
         "nodeinventario",
         "codigoinventario",
         "codigodeinventario",
+        "codbien",
+        "codigobien",
+        "codigodelbien",
     }
     for index, header in enumerate(headers, start=1):
         if normalize_header(header) in candidates:
@@ -281,7 +291,7 @@ async def import_scan_files(
                 if not code:
                     continue
                 operator = (
-                    normalize_code(worksheet.cell(row_number, operator_index).value)
+                    normalize_text(worksheet.cell(row_number, operator_index).value)
                     if operator_index
                     else "Celular"
                 ) or "Celular"
@@ -289,7 +299,7 @@ async def import_scan_files(
                 if isinstance(raw_date, datetime):
                     scanned_at = raw_date.astimezone().isoformat(timespec="seconds")
                 else:
-                    scanned_at = normalize_code(raw_date) or now_iso()
+                    scanned_at = normalize_text(raw_date) or now_iso()
 
                 imported_events += 1
                 current_file_events += 1
