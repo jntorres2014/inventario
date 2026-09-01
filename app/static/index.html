@@ -4,80 +4,72 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#123b66">
-  <title>Inventario local</title>
+  <title>Comparador de inventario</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <span class="eyebrow">RED LOCAL · SIN NUBE</span>
-      <h1>Inventario de activos</h1>
+      <span class="eyebrow">UBUNTU · PROCESAMIENTO LOCAL</span>
+      <h1>Comparador de inventario</h1>
     </div>
     <span id="connectionStatus" class="badge">Conectando…</span>
   </header>
 
   <main>
-    <section class="panel admin-panel">
-      <div>
-        <h2>1. Preparar inventario</h2>
-        <p>Cargá un archivo <strong>.xlsx</strong>. El archivo queda guardado únicamente en este servidor.</p>
-      </div>
-      <form id="uploadForm" class="upload-form">
-        <input id="inventoryFile" name="file" type="file" accept=".xlsx" required>
-        <input id="inventoryColumn" name="inventory_column" type="text" placeholder="Columna (opcional): Nro Inventario">
-        <button type="submit">Cargar Excel</button>
-      </form>
-      <button id="demoButton" class="secondary" type="button">Usar datos de demostración</button>
+    <section class="workflow-grid">
+      <article class="panel step-panel">
+        <span class="step-number">1</span>
+        <h2>Cargar inventario maestro</h2>
+        <p>Seleccioná el Excel local que contiene todos los activos.</p>
+        <form id="uploadForm" class="vertical-form">
+          <input id="inventoryFile" name="file" type="file" accept=".xlsx" required>
+          <input id="inventoryColumn" name="inventory_column" type="text" placeholder="Columna opcional: Nro Inventario">
+          <button type="submit">Cargar inventario</button>
+        </form>
+        <button id="demoButton" class="secondary full" type="button">Usar inventario de demostración</button>
+      </article>
+
+      <article class="panel step-panel">
+        <span class="step-number">2</span>
+        <h2>Cargar escaneos del celular</h2>
+        <p>Podés seleccionar uno o varios Excel generados por los teléfonos.</p>
+        <form id="scanFilesForm" class="vertical-form">
+          <input id="scanFiles" name="files" type="file" accept=".xlsx" multiple required>
+          <input id="scanCodeColumn" name="code_column" type="text" placeholder="Columna opcional: Numero Inventario">
+          <button type="submit">Comparar archivos</button>
+        </form>
+        <a class="mobile-link" href="/mobile/">Abrir instalador del escáner móvil</a>
+      </article>
     </section>
+
+    <div id="result" class="result neutral">Esperando archivos…</div>
 
     <section class="stats" aria-label="Resumen del inventario">
       <article><span>Total</span><strong id="total">0</strong></article>
       <article class="success"><span>Encontrados</span><strong id="found">0</strong></article>
       <article class="danger"><span>Pendientes</span><strong id="pending">0</strong></article>
       <article class="warning"><span>Repetidos</span><strong id="duplicates">0</strong></article>
+      <article class="unknown"><span>Desconocidos</span><strong id="unknown">0</strong></article>
     </section>
 
     <section class="progress-panel panel">
-      <div class="progress-copy"><strong id="percent">0%</strong><span id="filename">Sin archivo cargado</span></div>
+      <div class="progress-copy"><strong id="percent">0%</strong><span id="filename">Sin inventario cargado</span></div>
       <div class="progress-track"><div id="progressBar"></div></div>
     </section>
 
-    <section class="scanner-grid">
-      <article class="panel scanner-panel">
-        <h2>2. Escanear activo</h2>
-        <label for="scannerName">Nombre del operador</label>
-        <input id="scannerName" type="text" placeholder="Ej.: Jony" maxlength="100">
-
-        <div id="cameraArea" class="camera-area hidden">
-          <video id="camera" playsinline muted></video>
-          <div class="scan-line"></div>
-        </div>
-        <div class="camera-actions">
-          <button id="cameraButton" type="button">Abrir cámara</button>
-          <button id="stopCameraButton" class="secondary hidden" type="button">Cerrar cámara</button>
-        </div>
-
-        <div class="separator"><span>o ingresar el número</span></div>
-        <form id="scanForm" class="scan-form">
-          <input id="code" type="text" inputmode="numeric" autocomplete="off" placeholder="Número de inventario" required>
-          <button type="submit">Registrar</button>
-        </form>
-        <div id="result" class="result neutral">Esperando una lectura…</div>
-      </article>
-
-      <article class="panel list-panel">
-        <div class="list-heading">
-          <h2>Últimos registros</h2>
-          <button id="refreshButton" class="secondary small" type="button">Actualizar</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Inventario</th><th>Estado</th><th>Operador</th></tr></thead>
-            <tbody id="itemsBody"></tbody>
-          </table>
-        </div>
-        <a class="download-button" href="/api/export">Descargar Excel resultado</a>
-      </article>
+    <section class="panel list-panel">
+      <div class="list-heading">
+        <h2>Resultado de la comparación</h2>
+        <button id="refreshButton" class="secondary small" type="button">Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Inventario</th><th>Estado</th><th>Operador</th><th>Lecturas</th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <a class="download-button" href="/api/export">Descargar Excel final</a>
     </section>
   </main>
 
